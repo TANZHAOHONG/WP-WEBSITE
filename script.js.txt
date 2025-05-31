@@ -1,274 +1,32 @@
-// ===== FIXED MULTI-PAGE PORTFOLIO SCRIPT =====
-
+// Simple navigation active state management
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('✨ Portfolio Page Loaded!');
-
-    // ===== THEME TOGGLE FUNCTIONALITY (FIXED) =====
-    const themeToggle = document.getElementById('theme-toggle');
-    const htmlElement = document.documentElement;
+    console.log('✨ Portfolio Script Loaded');
     
-    if (!themeToggle) {
-        console.warn('⚠️ Theme toggle button not found!');
-        return;
-    }
-
-    // Simplified theme storage using cookies only
-    function getStoredTheme() {
-        // Check URL hash first
-        if (window.location.hash === '#dark') {
-            return 'dark';
-        }
-        if (window.location.hash === '#light') {
-            return 'light';
-        }
-        
-        // Check cookie
-        const savedTheme = getCookieValue('portfolio-theme');
-        return savedTheme || 'light'; // Default to light
-    }
-
-    function storeTheme(theme) {
-        // Store in cookie
-        setCookieValue('portfolio-theme', theme);
-        
-        // Update URL hash
-        const url = new URL(window.location);
-        url.hash = theme;
-        window.history.replaceState(null, '', url);
-    }
-
-    function setCookieValue(name, value) {
-        try {
-            document.cookie = `${name}=${value}; path=/; max-age=31536000; SameSite=Lax`;
-            console.log('✅ Theme stored in cookie:', value);
-        } catch (e) {
-            console.log('⚠️ Cookie storage not available');
-        }
-    }
-
-    function getCookieValue(name) {
-        try {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) {
-                const theme = parts.pop().split(';').shift();
-                console.log('📖 Theme read from cookie:', theme);
-                return theme;
-            }
-        } catch (e) {
-            console.log('⚠️ Cookie reading not available');
-        }
-        return null;
-    }
-
-    // Initialize theme
-    let currentTheme = getStoredTheme();
-    console.log('🎯 Initial theme:', currentTheme);
-    
-    // Function to apply theme - THIS IS THE KEY FIX
-    function applyTheme(theme) {
-        console.log(`🎨 Applying theme: ${theme}`);
-        
-        if (theme === 'dark') {
-            // Set the data-theme attribute that CSS is looking for
-            htmlElement.setAttribute('data-theme', 'dark');
-            themeToggle.textContent = '☀️ Light';
-            themeToggle.setAttribute('aria-label', 'Switch to light theme');
-            console.log('🌙 Dark theme applied - data-theme attribute set');
-        } else {
-            // Remove the data-theme attribute (defaults to light theme)
-            htmlElement.removeAttribute('data-theme');
-            themeToggle.textContent = '🌙 Dark';
-            themeToggle.setAttribute('aria-label', 'Switch to dark theme');
-            console.log('☀️ Light theme applied - data-theme attribute removed');
-        }
-        
-        // Store the theme
-        storeTheme(theme);
-        
-        // Force style recalculation
-        document.body.offsetHeight;
-        
-        // Debug: Verify the attribute is set
-        console.log('🔍 Current data-theme:', htmlElement.getAttribute('data-theme'));
-        
-        // Debug: Check computed styles
-        const computedStyle = getComputedStyle(htmlElement);
-        console.log('🎨 Computed --text-color:', computedStyle.getPropertyValue('--text-color').trim());
-    }
-
-    // Apply the stored theme immediately on page load
-    console.log('🚀 Applying initial theme...');
-    applyTheme(currentTheme);
-
-    // Theme toggle click handler
-    themeToggle.addEventListener('click', (e) => {
-        e.preventDefault();
-        console.log('🎯 Theme toggle clicked!');
-        
-        // Toggle theme
-        currentTheme = (currentTheme === 'dark') ? 'light' : 'dark';
-        console.log('🔄 Switching to:', currentTheme);
-        
-        // Apply new theme
-        applyTheme(currentTheme);
-    });
-
-    // Listen for hash changes (browser back/forward)
-    window.addEventListener('hashchange', () => {
-        const hashTheme = window.location.hash.replace('#', '');
-        if ((hashTheme === 'dark' || hashTheme === 'light') && hashTheme !== currentTheme) {
-            console.log('🔄 Hash change detected:', hashTheme);
-            currentTheme = hashTheme;
-            applyTheme(currentTheme);
-        }
-    });
-
-    // Debug: Add a manual test function (you can call this from console)
-    window.testDarkTheme = function() {
-        console.log('🧪 Manual dark theme test...');
-        htmlElement.setAttribute('data-theme', 'dark');
-        console.log('✅ Dark theme applied manually');
-    };
-
-    window.testLightTheme = function() {
-        console.log('🧪 Manual light theme test...');
-        htmlElement.removeAttribute('data-theme');
-        console.log('✅ Light theme applied manually');
-    };
-
-    // ===== NAVIGATION FUNCTIONALITY =====
+    // Set active navigation state
     const navLinks = document.querySelectorAll('.nav-links a');
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     
-    function setActiveNav() {
-        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-        console.log('📄 Current page:', currentPage);
-        
-        navLinks.forEach(link => {
-            link.classList.remove('active');
-            const linkHref = link.getAttribute('href');
-            if (linkHref) {
-                const cleanHref = linkHref.split('?')[0].split('#')[0];
-                
-                if (cleanHref === currentPage || 
-                    (currentPage === '' && cleanHref === 'index.html') ||
-                    (currentPage === 'index.html' && cleanHref === 'index.html')) {
-                    link.classList.add('active');
-                    console.log('✅ Active nav set for:', cleanHref);
-                }
-            }
-        });
-    }
-
-    setActiveNav();
-
-    // Preserve theme when navigating
     navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            const theme = htmlElement.hasAttribute('data-theme') ? 'dark' : 'light';
-            console.log('🔗 Navigation clicked, preserving theme:', theme);
-            
-            const href = link.getAttribute('href');
-            if (href && !href.startsWith('http') && !href.includes('#')) {
-                const newUrl = href + '#' + theme;
-                link.setAttribute('href', newUrl);
-                console.log('🔗 Updated navigation link:', newUrl);
-            }
-        });
-    });
-
-    // ===== ENHANCED ANIMATIONS =====
-    const projectCards = document.querySelectorAll('.project-card');
-    projectCards.forEach((card) => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-8px) scale(1.02)';
-        });
+        link.classList.remove('active');
+        const linkHref = link.getAttribute('href');
         
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0) scale(1)';
-        });
-    });
-
-    // Page transition animation
-    const body = document.body;
-    body.style.opacity = '0';
-    body.style.transform = 'translateY(20px)';
-    body.style.transition = 'all 0.5s ease';
-    
-    setTimeout(() => {
-        body.style.opacity = '1';
-        body.style.transform = 'translateY(0)';
-        console.log('✨ Page transition completed');
-    }, 100);
-
-    // Skill items animation
-    const skillItems = document.querySelectorAll('.skill-item');
-    if (skillItems.length > 0) {
-        skillItems.forEach((item, index) => {
-            item.style.animationDelay = `${index * 0.1}s`;
-            item.style.animation = 'fadeInUp 0.6s ease-out forwards';
-        });
-    }
-
-    // ===== ENHANCED HOVER EFFECTS =====
-    const buttons = document.querySelectorAll('.cta-button, .project-link, .theme-toggle');
-    buttons.forEach(button => {
-        button.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-2px)';
-        });
-        
-        button.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-        });
-    });
-
-    // Profile image hover effect
-    const profileImg = document.querySelector('.profile-img');
-    if (profileImg) {
-        profileImg.addEventListener('mouseenter', function() {
-            this.style.transform = 'scale(1.05) rotate(2deg)';
-        });
-        
-        profileImg.addEventListener('mouseleave', function() {
-            this.style.transform = 'scale(1) rotate(0deg)';
-        });
-    }
-
-    // ===== ACCESSIBILITY IMPROVEMENTS =====
-    themeToggle.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            themeToggle.click();
+        // Check if current page matches the link
+        if (linkHref === currentPage || 
+            (currentPage === '' && linkHref === 'index.html') ||
+            (currentPage.includes('index') && linkHref === 'index.html')) {
+            link.classList.add('active');
         }
     });
-
-    // Focus indicators
-    const interactiveElements = document.querySelectorAll('button, a, .nav-links a');
-    interactiveElements.forEach(element => {
-        element.addEventListener('focus', function() {
-            this.style.outline = '2px solid var(--primary-color)';
-            this.style.outlineOffset = '2px';
-        });
-        
-        element.addEventListener('blur', function() {
-            this.style.outline = 'none';
-        });
-    });
-
-    console.log('%c🎨 Multi-Page Portfolio Loaded Successfully! 🎨', 
-        'color: #9966cc; font-size: 16px; font-weight: bold;');
-        
-    console.log('Current theme on load:', currentTheme);
-    console.log('Page loaded:', window.location.pathname.split('/').pop() || 'index.html');
     
-    // Final debug check
-    setTimeout(() => {
-        console.log('🔍 Final debug check:');
-        console.log('- data-theme attribute:', htmlElement.getAttribute('data-theme'));
-        console.log('- Theme toggle text:', themeToggle.textContent);
-        console.log('- Current theme variable:', currentTheme);
-        
-        const computedStyle = getComputedStyle(document.documentElement);
-        console.log('- CSS --text-color:', computedStyle.getPropertyValue('--text-color'));
-    }, 500);
+    // Log current theme detection
+    const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    console.log(`🎨 System theme detected: ${isDarkMode ? 'Dark' : 'Light'} mode`);
+    
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        const newTheme = e.matches ? 'dark' : 'light';
+        console.log(`🔄 System theme changed to: ${newTheme} mode`);
+    });
+    
+    console.log('✅ Portfolio ready!');
 });

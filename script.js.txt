@@ -12,9 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Use a cookie-like approach with document.cookie for persistence
+    // Simplified theme storage using cookies only
     function getStoredTheme() {
-        // Check if there's a theme preference in the page URL hash first
+        // Check URL hash first
         if (window.location.hash === '#dark') {
             return 'dark';
         }
@@ -22,99 +22,86 @@ document.addEventListener('DOMContentLoaded', () => {
             return 'light';
         }
         
-        // Check for theme in a simple way using document title as storage
-        // This is a workaround since localStorage isn't available
+        // Check cookie
         const savedTheme = getCookieValue('portfolio-theme');
-        if (savedTheme) {
-            return savedTheme;
-        }
-        
-        // Default to light theme
-        return 'light';
+        return savedTheme || 'light'; // Default to light
     }
 
     function storeTheme(theme) {
-        // Store theme using a simple cookie-like method
+        // Store in cookie
         setCookieValue('portfolio-theme', theme);
         
-        // Also update URL hash for immediate cross-page navigation
+        // Update URL hash
         const url = new URL(window.location);
         url.hash = theme;
         window.history.replaceState(null, '', url);
     }
 
-    // Simple cookie-like storage using document properties
     function setCookieValue(name, value) {
-        // Store in page meta for persistence
-        let metaTheme = document.querySelector('meta[name="theme-preference"]');
-        if (!metaTheme) {
-            metaTheme = document.createElement('meta');
-            metaTheme.name = 'theme-preference';
-            document.head.appendChild(metaTheme);
-        }
-        metaTheme.content = value;
-        
-        // Also try to use a more persistent method
         try {
             document.cookie = `${name}=${value}; path=/; max-age=31536000; SameSite=Lax`;
+            console.log('✅ Theme stored in cookie:', value);
         } catch (e) {
-            console.log('Cookie storage not available, using meta tag only');
+            console.log('⚠️ Cookie storage not available');
         }
     }
 
     function getCookieValue(name) {
-        // First try to get from meta tag
-        const metaTheme = document.querySelector('meta[name="theme-preference"]');
-        if (metaTheme && metaTheme.content) {
-            return metaTheme.content;
-        }
-        
-        // Try to get from cookie
         try {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
             if (parts.length === 2) {
-                return parts.pop().split(';').shift();
+                const theme = parts.pop().split(';').shift();
+                console.log('📖 Theme read from cookie:', theme);
+                return theme;
             }
         } catch (e) {
-            console.log('Cookie reading not available');
+            console.log('⚠️ Cookie reading not available');
         }
-        
         return null;
     }
 
-    // Get initial theme
+    // Initialize theme
     let currentTheme = getStoredTheme();
+    console.log('🎯 Initial theme:', currentTheme);
     
-    // Function to apply theme
+    // Function to apply theme - THIS IS THE KEY FIX
     function applyTheme(theme) {
         console.log(`🎨 Applying theme: ${theme}`);
         
         if (theme === 'dark') {
+            // Set the data-theme attribute that CSS is looking for
             htmlElement.setAttribute('data-theme', 'dark');
             themeToggle.textContent = '☀️ Light';
             themeToggle.setAttribute('aria-label', 'Switch to light theme');
-            document.body.style.setProperty('--current-theme', 'dark');
-            console.log('🌙 Dark theme applied');
+            console.log('🌙 Dark theme applied - data-theme attribute set');
         } else {
+            // Remove the data-theme attribute (defaults to light theme)
             htmlElement.removeAttribute('data-theme');
             themeToggle.textContent = '🌙 Dark';
             themeToggle.setAttribute('aria-label', 'Switch to dark theme');
-            document.body.style.setProperty('--current-theme', 'light');
-            console.log('☀️ Light theme applied');
+            console.log('☀️ Light theme applied - data-theme attribute removed');
         }
         
         // Store the theme
         storeTheme(theme);
         
-        // Force a style recalculation
+        // Force style recalculation
         document.body.offsetHeight;
+        
+        // Debug: Verify the attribute is set
+        console.log('🔍 Current data-theme:', htmlElement.getAttribute('data-theme'));
+        
+        // Debug: Check computed styles
+        const computedStyle = getComputedStyle(htmlElement);
+        console.log('🎨 Computed --text-color:', computedStyle.getPropertyValue('--text-color').trim());
     }
 
-    // Apply the stored theme immediately
+    // Apply the stored theme immediately on page load
+    console.log('🚀 Applying initial theme...');
     applyTheme(currentTheme);
 
-    // Theme toggle event listener
+    // Theme toggle click handler
     themeToggle.addEventListener('click', (e) => {
         e.preventDefault();
         console.log('🎯 Theme toggle clicked!');
@@ -127,22 +114,35 @@ document.addEventListener('DOMContentLoaded', () => {
         applyTheme(currentTheme);
     });
 
-    // Listen for hash changes (when user navigates with browser back/forward)
+    // Listen for hash changes (browser back/forward)
     window.addEventListener('hashchange', () => {
         const hashTheme = window.location.hash.replace('#', '');
         if ((hashTheme === 'dark' || hashTheme === 'light') && hashTheme !== currentTheme) {
+            console.log('🔄 Hash change detected:', hashTheme);
             currentTheme = hashTheme;
             applyTheme(currentTheme);
         }
     });
 
+    // Debug: Add a manual test function (you can call this from console)
+    window.testDarkTheme = function() {
+        console.log('🧪 Manual dark theme test...');
+        htmlElement.setAttribute('data-theme', 'dark');
+        console.log('✅ Dark theme applied manually');
+    };
+
+    window.testLightTheme = function() {
+        console.log('🧪 Manual light theme test...');
+        htmlElement.removeAttribute('data-theme');
+        console.log('✅ Light theme applied manually');
+    };
+
     // ===== NAVIGATION FUNCTIONALITY =====
     const navLinks = document.querySelectorAll('.nav-links a');
     
-    // Set active navigation based on current page
     function setActiveNav() {
         const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-        console.log('Current page:', currentPage);
+        console.log('📄 Current page:', currentPage);
         
         navLinks.forEach(link => {
             link.classList.remove('active');
@@ -154,28 +154,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     (currentPage === '' && cleanHref === 'index.html') ||
                     (currentPage === 'index.html' && cleanHref === 'index.html')) {
                     link.classList.add('active');
-                    console.log('Active nav set for:', cleanHref);
+                    console.log('✅ Active nav set for:', cleanHref);
                 }
             }
         });
     }
 
-    // Set active nav on page load
     setActiveNav();
 
-    // Preserve theme when navigating to other pages
+    // Preserve theme when navigating
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
-            // Get the current theme
             const theme = htmlElement.hasAttribute('data-theme') ? 'dark' : 'light';
-            console.log('Navigation clicked, preserving theme:', theme);
+            console.log('🔗 Navigation clicked, preserving theme:', theme);
             
-            // Add theme to the target URL
             const href = link.getAttribute('href');
             if (href && !href.startsWith('http') && !href.includes('#')) {
                 const newUrl = href + '#' + theme;
                 link.setAttribute('href', newUrl);
-                console.log('Updated navigation link:', newUrl);
+                console.log('🔗 Updated navigation link:', newUrl);
             }
         });
     });
@@ -204,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('✨ Page transition completed');
     }, 100);
 
-    // Skill items animation (if present on page)
+    // Skill items animation
     const skillItems = document.querySelectorAll('.skill-item');
     if (skillItems.length > 0) {
         skillItems.forEach((item, index) => {
@@ -214,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ===== ENHANCED HOVER EFFECTS =====
-    // Button hover effects
     const buttons = document.querySelectorAll('.cta-button, .project-link, .theme-toggle');
     buttons.forEach(button => {
         button.addEventListener('mouseenter', function() {
@@ -226,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Profile image hover effect (if present)
+    // Profile image hover effect
     const profileImg = document.querySelector('.profile-img');
     if (profileImg) {
         profileImg.addEventListener('mouseenter', function() {
@@ -239,7 +235,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ===== ACCESSIBILITY IMPROVEMENTS =====
-    // Add keyboard navigation for theme toggle
     themeToggle.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
@@ -247,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Add focus indicators
+    // Focus indicators
     const interactiveElements = document.querySelectorAll('button, a, .nav-links a');
     interactiveElements.forEach(element => {
         element.addEventListener('focus', function() {
@@ -266,8 +261,14 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Current theme on load:', currentTheme);
     console.log('Page loaded:', window.location.pathname.split('/').pop() || 'index.html');
     
-    // Debug: Check if CSS variables are working
-    const computedStyle = getComputedStyle(document.documentElement);
-    console.log('CSS --text-color:', computedStyle.getPropertyValue('--text-color'));
-    console.log('data-theme attribute:', htmlElement.getAttribute('data-theme'));
+    // Final debug check
+    setTimeout(() => {
+        console.log('🔍 Final debug check:');
+        console.log('- data-theme attribute:', htmlElement.getAttribute('data-theme'));
+        console.log('- Theme toggle text:', themeToggle.textContent);
+        console.log('- Current theme variable:', currentTheme);
+        
+        const computedStyle = getComputedStyle(document.documentElement);
+        console.log('- CSS --text-color:', computedStyle.getPropertyValue('--text-color'));
+    }, 500);
 });

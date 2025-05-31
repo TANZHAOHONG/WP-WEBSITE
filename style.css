@@ -75,6 +75,7 @@ nav {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   font-weight: 600;
+  animation: shimmer 3s ease-in-out infinite;
 }
 
 .nav-links {
@@ -161,7 +162,7 @@ footer {
   padding: 4rem 3rem;
   border-radius: var(--border-radius);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(10px);
+  //backdrop-filter: blur(10px);
   width: auto;
   min-width: 650px;
   max-width: 90%;
@@ -233,12 +234,12 @@ footer {
 
 .about-info h2 {
   font-size: 2.5rem;
+  margin-bottom: 1.5rem;
   background: linear-gradient(135deg, #F7CAC9, #92A8D1);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   background-size: 100% 100%;
-  margin-bottom: 1rem;
   display: inline-block;
 }
 

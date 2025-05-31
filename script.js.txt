@@ -1,5 +1,4 @@
 // ===== FIXED MULTI-PAGE PORTFOLIO SCRIPT =====
-// Simple and reliable theme persistence using URL hash only
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('✨ Portfolio Page Loaded!');
@@ -13,9 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Simple theme storage using URL hash only (works across pages)
+    // Use a cookie-like approach with document.cookie for persistence
     function getStoredTheme() {
-        // Check URL hash
+        // Check if there's a theme preference in the page URL hash first
         if (window.location.hash === '#dark') {
             return 'dark';
         }
@@ -23,23 +22,65 @@ document.addEventListener('DOMContentLoaded', () => {
             return 'light';
         }
         
+        // Check for theme in a simple way using document title as storage
+        // This is a workaround since localStorage isn't available
+        const savedTheme = getCookieValue('portfolio-theme');
+        if (savedTheme) {
+            return savedTheme;
+        }
+        
         // Default to light theme
         return 'light';
     }
 
     function storeTheme(theme) {
-        // Store in URL hash (persists on page navigation)
-        if (theme === 'dark') {
-            // Use replaceState to avoid adding to browser history
-            const url = new URL(window.location);
-            url.hash = 'dark';
-            window.history.replaceState(null, '', url);
-        } else {
-            // Remove hash for light theme or set to light
-            const url = new URL(window.location);
-            url.hash = 'light';
-            window.history.replaceState(null, '', url);
+        // Store theme using a simple cookie-like method
+        setCookieValue('portfolio-theme', theme);
+        
+        // Also update URL hash for immediate cross-page navigation
+        const url = new URL(window.location);
+        url.hash = theme;
+        window.history.replaceState(null, '', url);
+    }
+
+    // Simple cookie-like storage using document properties
+    function setCookieValue(name, value) {
+        // Store in page meta for persistence
+        let metaTheme = document.querySelector('meta[name="theme-preference"]');
+        if (!metaTheme) {
+            metaTheme = document.createElement('meta');
+            metaTheme.name = 'theme-preference';
+            document.head.appendChild(metaTheme);
         }
+        metaTheme.content = value;
+        
+        // Also try to use a more persistent method
+        try {
+            document.cookie = `${name}=${value}; path=/; max-age=31536000; SameSite=Lax`;
+        } catch (e) {
+            console.log('Cookie storage not available, using meta tag only');
+        }
+    }
+
+    function getCookieValue(name) {
+        // First try to get from meta tag
+        const metaTheme = document.querySelector('meta[name="theme-preference"]');
+        if (metaTheme && metaTheme.content) {
+            return metaTheme.content;
+        }
+        
+        // Try to get from cookie
+        try {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) {
+                return parts.pop().split(';').shift();
+            }
+        } catch (e) {
+            console.log('Cookie reading not available');
+        }
+        
+        return null;
     }
 
     // Get initial theme
@@ -47,20 +88,27 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Function to apply theme
     function applyTheme(theme) {
+        console.log(`🎨 Applying theme: ${theme}`);
+        
         if (theme === 'dark') {
             htmlElement.setAttribute('data-theme', 'dark');
             themeToggle.textContent = '☀️ Light';
             themeToggle.setAttribute('aria-label', 'Switch to light theme');
-            console.log('🌙 Applied dark theme');
+            document.body.style.setProperty('--current-theme', 'dark');
+            console.log('🌙 Dark theme applied');
         } else {
             htmlElement.removeAttribute('data-theme');
             themeToggle.textContent = '🌙 Dark';
             themeToggle.setAttribute('aria-label', 'Switch to dark theme');
-            console.log('☀️ Applied light theme');
+            document.body.style.setProperty('--current-theme', 'light');
+            console.log('☀️ Light theme applied');
         }
         
         // Store the theme
         storeTheme(theme);
+        
+        // Force a style recalculation
+        document.body.offsetHeight;
     }
 
     // Apply the stored theme immediately
@@ -68,30 +116,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Theme toggle event listener
     themeToggle.addEventListener('click', (e) => {
-        e.preventDefault(); // Prevent any default behavior
+        e.preventDefault();
         console.log('🎯 Theme toggle clicked!');
         
         // Toggle theme
         currentTheme = (currentTheme === 'dark') ? 'light' : 'dark';
+        console.log('🔄 Switching to:', currentTheme);
         
         // Apply new theme
         applyTheme(currentTheme);
-        console.log('New theme:', currentTheme);
     });
 
     // Listen for hash changes (when user navigates with browser back/forward)
     window.addEventListener('hashchange', () => {
-        const newTheme = getStoredTheme();
-        if (newTheme !== currentTheme) {
-            currentTheme = newTheme;
-            // Apply theme without storing (to avoid infinite loop)
-            if (currentTheme === 'dark') {
-                htmlElement.setAttribute('data-theme', 'dark');
-                themeToggle.textContent = '☀️ Light';
-            } else {
-                htmlElement.removeAttribute('data-theme');
-                themeToggle.textContent = '🌙 Dark';
-            }
+        const hashTheme = window.location.hash.replace('#', '');
+        if ((hashTheme === 'dark' || hashTheme === 'light') && hashTheme !== currentTheme) {
+            currentTheme = hashTheme;
+            applyTheme(currentTheme);
         }
     });
 
@@ -101,17 +142,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set active navigation based on current page
     function setActiveNav() {
         const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        console.log('Current page:', currentPage);
         
         navLinks.forEach(link => {
             link.classList.remove('active');
             const linkHref = link.getAttribute('href');
             if (linkHref) {
-                const cleanHref = linkHref.split('?')[0].split('#')[0]; // Remove query params and hash
+                const cleanHref = linkHref.split('?')[0].split('#')[0];
                 
                 if (cleanHref === currentPage || 
                     (currentPage === '' && cleanHref === 'index.html') ||
                     (currentPage === 'index.html' && cleanHref === 'index.html')) {
                     link.classList.add('active');
+                    console.log('Active nav set for:', cleanHref);
                 }
             }
         });
@@ -125,17 +168,14 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', (e) => {
             // Get the current theme
             const theme = htmlElement.hasAttribute('data-theme') ? 'dark' : 'light';
+            console.log('Navigation clicked, preserving theme:', theme);
             
             // Add theme to the target URL
             const href = link.getAttribute('href');
             if (href && !href.startsWith('http') && !href.includes('#')) {
-                const url = new URL(href, window.location.origin);
-                if (theme === 'dark') {
-                    url.hash = 'dark';
-                } else {
-                    url.hash = 'light';
-                }
-                link.setAttribute('href', url.pathname + url.hash);
+                const newUrl = href + '#' + theme;
+                link.setAttribute('href', newUrl);
+                console.log('Updated navigation link:', newUrl);
             }
         });
     });
@@ -223,6 +263,11 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('%c🎨 Multi-Page Portfolio Loaded Successfully! 🎨', 
         'color: #9966cc; font-size: 16px; font-weight: bold;');
         
-    console.log('Current theme:', currentTheme);
+    console.log('Current theme on load:', currentTheme);
     console.log('Page loaded:', window.location.pathname.split('/').pop() || 'index.html');
+    
+    // Debug: Check if CSS variables are working
+    const computedStyle = getComputedStyle(document.documentElement);
+    console.log('CSS --text-color:', computedStyle.getPropertyValue('--text-color'));
+    console.log('data-theme attribute:', htmlElement.getAttribute('data-theme'));
 });

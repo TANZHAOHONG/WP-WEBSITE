@@ -18,10 +18,8 @@
         <li><a href="about.html">About Me</a></li>
         <li><a href="projects.html">Projects</a></li>
       </ul>
-      <button class="theme-toggle" id="theme-toggle">🌓 Theme</button>
     </nav>
   </header>
-
   <!-- HOME PAGE CONTENT -->
   <main class="home-main">
     <div class="home-content">
@@ -30,96 +28,10 @@
       <a href="about.html" class="cta-button">Let's start!</a>
     </div>
   </main>
-
   <!-- Footer -->
   <footer>
     <p>&copy; 2025 TAN ZHAO HONG</p>
   </footer>
-
   <script src="script.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      console.log('🚀 Debug page loaded');
-      
-      const themeToggle = document.getElementById('theme-toggle');
-      const htmlElement = document.documentElement;
-      const debugContent = document.getElementById('debug-content');
-      
-      let currentTheme = 'light';
-      
-      function updateDebugInfo() {
-        const dataTheme = htmlElement.getAttribute('data-theme');
-        const computedStyle = getComputedStyle(htmlElement);
-        const textColor = computedStyle.getPropertyValue('--text-color').trim();
-        const primaryColor = computedStyle.getPropertyValue('--primary-color').trim();
-        
-        debugContent.innerHTML = `
-          Current Theme: ${currentTheme}<br>
-          data-theme attribute: ${dataTheme || 'null'}<br>
-          CSS --text-color: ${textColor}<br>
-          CSS --primary-color: ${primaryColor}<br>
-          Body color: ${getComputedStyle(document.body).color}<br>
-          Timestamp: ${new Date().toLocaleTimeString()}
-        `;
-        
-        console.log('📊 Debug Info:', {
-          currentTheme,
-          dataTheme,
-          textColor,
-          primaryColor,
-          bodyColor: getComputedStyle(document.body).color
-        });
-      }
-      
-      function applyTheme(theme) {
-        console.log(`🎨 Applying theme: ${theme}`);
-        currentTheme = theme;
-        
-        if (theme === 'dark') {
-          htmlElement.setAttribute('data-theme', 'dark');
-          themeToggle.textContent = '☀️ Light Mode';
-          console.log('✅ Dark theme applied');
-        } else {
-          htmlElement.removeAttribute('data-theme');
-          themeToggle.textContent = '🌙 Dark Mode';
-          console.log('✅ Light theme applied');
-        }
-        
-        // Force reflow
-        document.body.offsetHeight;
-        
-        // Update debug info after a short delay
-        setTimeout(updateDebugInfo, 100);
-      }
-      
-      // Initialize
-      applyTheme(currentTheme);
-      
-      // Toggle event
-      themeToggle.addEventListener('click', () => {
-        console.log('🖱️ Toggle clicked');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        applyTheme(newTheme);
-      });
-      
-      // Manual test functions
-      window.testDark = () => {
-        console.log('🧪 Manual dark test');
-        htmlElement.setAttribute('data-theme', 'dark');
-        updateDebugInfo();
-      };
-      
-      window.testLight = () => {
-        console.log('🧪 Manual light test');
-        htmlElement.removeAttribute('data-theme');
-        updateDebugInfo();
-      };
-      
-      // Initial debug info
-      setTimeout(updateDebugInfo, 500);
-      
-      console.log('✅ Debug script loaded. Try window.testDark() or window.testLight()');
-    });
-  </script>
 </body>
 </html>

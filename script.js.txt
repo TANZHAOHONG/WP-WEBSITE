@@ -1,0 +1,228 @@
+// ===== FIXED MULTI-PAGE PORTFOLIO SCRIPT =====
+// Simple and reliable theme persistence using URL hash only
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('✨ Portfolio Page Loaded!');
+
+    // ===== THEME TOGGLE FUNCTIONALITY (FIXED) =====
+    const themeToggle = document.getElementById('theme-toggle');
+    const htmlElement = document.documentElement;
+    
+    if (!themeToggle) {
+        console.warn('⚠️ Theme toggle button not found!');
+        return;
+    }
+
+    // Simple theme storage using URL hash only (works across pages)
+    function getStoredTheme() {
+        // Check URL hash
+        if (window.location.hash === '#dark') {
+            return 'dark';
+        }
+        if (window.location.hash === '#light') {
+            return 'light';
+        }
+        
+        // Default to light theme
+        return 'light';
+    }
+
+    function storeTheme(theme) {
+        // Store in URL hash (persists on page navigation)
+        if (theme === 'dark') {
+            // Use replaceState to avoid adding to browser history
+            const url = new URL(window.location);
+            url.hash = 'dark';
+            window.history.replaceState(null, '', url);
+        } else {
+            // Remove hash for light theme or set to light
+            const url = new URL(window.location);
+            url.hash = 'light';
+            window.history.replaceState(null, '', url);
+        }
+    }
+
+    // Get initial theme
+    let currentTheme = getStoredTheme();
+    
+    // Function to apply theme
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            htmlElement.setAttribute('data-theme', 'dark');
+            themeToggle.textContent = '☀️ Light';
+            themeToggle.setAttribute('aria-label', 'Switch to light theme');
+            console.log('🌙 Applied dark theme');
+        } else {
+            htmlElement.removeAttribute('data-theme');
+            themeToggle.textContent = '🌙 Dark';
+            themeToggle.setAttribute('aria-label', 'Switch to dark theme');
+            console.log('☀️ Applied light theme');
+        }
+        
+        // Store the theme
+        storeTheme(theme);
+    }
+
+    // Apply the stored theme immediately
+    applyTheme(currentTheme);
+
+    // Theme toggle event listener
+    themeToggle.addEventListener('click', (e) => {
+        e.preventDefault(); // Prevent any default behavior
+        console.log('🎯 Theme toggle clicked!');
+        
+        // Toggle theme
+        currentTheme = (currentTheme === 'dark') ? 'light' : 'dark';
+        
+        // Apply new theme
+        applyTheme(currentTheme);
+        console.log('New theme:', currentTheme);
+    });
+
+    // Listen for hash changes (when user navigates with browser back/forward)
+    window.addEventListener('hashchange', () => {
+        const newTheme = getStoredTheme();
+        if (newTheme !== currentTheme) {
+            currentTheme = newTheme;
+            // Apply theme without storing (to avoid infinite loop)
+            if (currentTheme === 'dark') {
+                htmlElement.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️ Light';
+            } else {
+                htmlElement.removeAttribute('data-theme');
+                themeToggle.textContent = '🌙 Dark';
+            }
+        }
+    });
+
+    // ===== NAVIGATION FUNCTIONALITY =====
+    const navLinks = document.querySelectorAll('.nav-links a');
+    
+    // Set active navigation based on current page
+    function setActiveNav() {
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            const linkHref = link.getAttribute('href');
+            if (linkHref) {
+                const cleanHref = linkHref.split('?')[0].split('#')[0]; // Remove query params and hash
+                
+                if (cleanHref === currentPage || 
+                    (currentPage === '' && cleanHref === 'index.html') ||
+                    (currentPage === 'index.html' && cleanHref === 'index.html')) {
+                    link.classList.add('active');
+                }
+            }
+        });
+    }
+
+    // Set active nav on page load
+    setActiveNav();
+
+    // Preserve theme when navigating to other pages
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            // Get the current theme
+            const theme = htmlElement.hasAttribute('data-theme') ? 'dark' : 'light';
+            
+            // Add theme to the target URL
+            const href = link.getAttribute('href');
+            if (href && !href.startsWith('http') && !href.includes('#')) {
+                const url = new URL(href, window.location.origin);
+                if (theme === 'dark') {
+                    url.hash = 'dark';
+                } else {
+                    url.hash = 'light';
+                }
+                link.setAttribute('href', url.pathname + url.hash);
+            }
+        });
+    });
+
+    // ===== ENHANCED ANIMATIONS =====
+    const projectCards = document.querySelectorAll('.project-card');
+    projectCards.forEach((card) => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px) scale(1.02)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+
+    // Page transition animation
+    const body = document.body;
+    body.style.opacity = '0';
+    body.style.transform = 'translateY(20px)';
+    body.style.transition = 'all 0.5s ease';
+    
+    setTimeout(() => {
+        body.style.opacity = '1';
+        body.style.transform = 'translateY(0)';
+        console.log('✨ Page transition completed');
+    }, 100);
+
+    // Skill items animation (if present on page)
+    const skillItems = document.querySelectorAll('.skill-item');
+    if (skillItems.length > 0) {
+        skillItems.forEach((item, index) => {
+            item.style.animationDelay = `${index * 0.1}s`;
+            item.style.animation = 'fadeInUp 0.6s ease-out forwards';
+        });
+    }
+
+    // ===== ENHANCED HOVER EFFECTS =====
+    // Button hover effects
+    const buttons = document.querySelectorAll('.cta-button, .project-link, .theme-toggle');
+    buttons.forEach(button => {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+
+    // Profile image hover effect (if present)
+    const profileImg = document.querySelector('.profile-img');
+    if (profileImg) {
+        profileImg.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.05) rotate(2deg)';
+        });
+        
+        profileImg.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1) rotate(0deg)';
+        });
+    }
+
+    // ===== ACCESSIBILITY IMPROVEMENTS =====
+    // Add keyboard navigation for theme toggle
+    themeToggle.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            themeToggle.click();
+        }
+    });
+
+    // Add focus indicators
+    const interactiveElements = document.querySelectorAll('button, a, .nav-links a');
+    interactiveElements.forEach(element => {
+        element.addEventListener('focus', function() {
+            this.style.outline = '2px solid var(--primary-color)';
+            this.style.outlineOffset = '2px';
+        });
+        
+        element.addEventListener('blur', function() {
+            this.style.outline = 'none';
+        });
+    });
+
+    console.log('%c🎨 Multi-Page Portfolio Loaded Successfully! 🎨', 
+        'color: #9966cc; font-size: 16px; font-weight: bold;');
+        
+    console.log('Current theme:', currentTheme);
+    console.log('Page loaded:', window.location.pathname.split('/').pop() || 'index.html');
+});
